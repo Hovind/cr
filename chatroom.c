@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <pthread.h>
+#include <stdlib.h>
 
 #define MAX_AUTH_ATTEMPS 3
 
@@ -224,27 +225,30 @@ int broadcast_text(char *login, char *data)
  */
 char* clt_authentication(int clt_sock){
   
-  for(int attemp=0; attemp < MAX_AUTH_ATTEMPS; attemp++){
-    
-    /* 
-       authentification du client :
+	for (int attemp=0; attemp < MAX_AUTH_ATTEMPS; attemp++) {
 
-       - envoi du AUTH_REQ
+		/* 
+		 authentification du client :
 
-       - lecture du AUTH_RESP
-       
-       - envoi du ACCESS_OK / ACCESS_DENIED ou nouveau tour de boucle
+		 - envoi du AUTH_REQ
 
-       - en cas de succès retourne un pointeur vers la chaîne de
-         caractère contenant le login, sinon retourne NULL
+		 - lecture du AUTH_RESP
+		 
+		 - envoi du ACCESS_OK / ACCESS_DENIED ou nouveau tour de boucle
 
-     */
+		 - en cas de succès retourne un pointeur vers la chaîne de
+			 caractère contenant le login, sinon retourne NULL
 
-    
-  } /* for */
-  
-  return NULL;
-	//return "Pierre";
+		*/
+		/* send_msg(AUTH_REQ);
+		recv_msg(AUTH_RESP);
+		if (asd) {
+			
+		} */
+
+	} /* for */
+
+	return NULL;
 }
 
 int login_chatroom(int clt_sock, char *ip, int port)
@@ -266,10 +270,10 @@ int login_chatroom(int clt_sock, char *ip, int port)
   /* authenticate the connected client */
   login = clt_authentication(clt_sock);
   
-  /*if (login == NULL) {
+  if (login == NULL) {
 		DEBUG("authentication failed for %s:%d", ip, port);      
 		return -1;
-	}*/
+	}
 
   DEBUG("client %s(%s:%d) authenticated", login, ip, port);
 

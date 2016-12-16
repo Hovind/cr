@@ -32,8 +32,17 @@ void sig_handler(int s)
  */ 
 int connect_to_server(char *srv_name, int srv_port){
   int clt_sock = -1;
-	struct hostent *host;
+	struct addrinfo hints, *res;
+	int sockfd;
 
+	// first, load up address structs with getaddrinfo():
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_UNSPEC;  // use IPv4 or IPv6, whichever
+	hints.ai_socktype = SOCK_STREAM;
+
+	// we could put "80" instead on "http" on the next line:
+	getaddrinfo("www.example.com", "http", &hints, &res);
   /* Code nécessaires à la création d'une socket en
      écoute : 
      
@@ -47,13 +56,28 @@ int connect_to_server(char *srv_name, int srv_port){
 
      La fonction retourne l'identifiant de la socket cliente ou -1 en cas d'erreur
   */
-	host = gethostbyname(srv_name);
-	
+
+
 	clt_sock =  socket(host->h_addrtype, SOCK_STREAM, 0);
+
+	sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+
+	// connect it to the address and port we passed in to getaddrinfo():
+
 	if (clt_sock < 0)
 		return clt_sock;
 
-	//connect(clt_sock, host->, socklen_t addrlen);
+	// first, load up address structs with getaddrinfo():
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;  // use IPv4 or IPv6, whichever
+	hints.ai_socktype = SOCK_STREAM;
+
+	/* Get address info */
+	getaddrinfo(srv_name, srv_port, &hints, &res);
+
+	/* Connect */
+	connect(clt_sock, res->ai_addr, res->ai_addrlen);
 
   return clt_sock;
 }
@@ -77,7 +101,7 @@ int authenticate(int clt_sock){
 
 int instant_messaging(int clt_sock){
   
-  while(1){
+  while(1) {
     /*    fd_set rset;
     unsigned char code;
     unsigned char size;
