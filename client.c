@@ -8,20 +8,20 @@ int DFLAG;
 
 void sig_handler(int s)
 {
-  msg_t msg;
-
-  switch (s) 
-    {
-    case SIGINT:
-      msg.code = END_OK;
-      msg.size = 0;
-      
-      send(clt_sock, &msg, HEADSIZE, 0);
-  
-      close(clt_sock);
-      exit(EXIT_SUCCESS);
-    default: return;
-    }
+	msg_t msg;
+	
+	switch (s) {
+	case SIGINT: /* Fallthrough */
+		msg.code = END_OK;
+		msg.size = 0;
+		
+		send(clt_sock, &msg, HEADSIZE, 0);
+		
+		close(clt_sock);
+		exit(EXIT_SUCCESS);
+	default:
+		return;
+	}
 }
 
 /* Établie une session TCP vers srv_name sur le port srv_port
@@ -30,59 +30,46 @@ void sig_handler(int s)
  *
  * renvoie: descripteur vers le socket
  */ 
-int connect_to_server(char *srv_name, int srv_port){
-  int clt_sock = -1;
+int connect_to_server(char *srv_name, int srv_port)
+{
+	int clt_sock = -1;
 	struct addrinfo hints, *res;
-	int sockfd;
+	char service[6];
+	/* Code nécessaires à la création d'une socket en
+	   écoute : 
+	     
+	   - résolution du nom avec gethostbyname
+	     
+	   - appel à socket() 
+	     
+	   - appel à connect()
+	   
+	   avec les bons paramètres et contrôles d'erreurs.
 
-	// first, load up address structs with getaddrinfo():
+	   La fonction retourne l'identifiant de la socket cliente ou -1 en cas d'erreur
+	*/
 
-	memset(&hints, 0, sizeof hints);
-	hints.ai_family = AF_UNSPEC;  // use IPv4 or IPv6, whichever
-	hints.ai_socktype = SOCK_STREAM;
-
-	// we could put "80" instead on "http" on the next line:
-	getaddrinfo("www.example.com", "http", &hints, &res);
-  /* Code nécessaires à la création d'une socket en
-     écoute : 
-     
-     - résolution du nom avec gethostbyname
-     
-     - appel à socket() 
-     
-     - appel à connect()
-     
-     avec les bons paramètres et contrôles d'erreurs.
-
-     La fonction retourne l'identifiant de la socket cliente ou -1 en cas d'erreur
-  */
-
-
-	clt_sock =  socket(host->h_addrtype, SOCK_STREAM, 0);
-
-	sockfd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-
-	// connect it to the address and port we passed in to getaddrinfo():
-
-	if (clt_sock < 0)
-		return clt_sock;
-
-	// first, load up address structs with getaddrinfo():
-
+	/* Get address info */
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;  // use IPv4 or IPv6, whichever
 	hints.ai_socktype = SOCK_STREAM;
+	sprintf(service, "%d", srv_port);
+	getaddrinfo(srv_name, service, &hints, &res);
 
-	/* Get address info */
-	getaddrinfo(srv_name, srv_port, &hints, &res);
+	/* Get socket */
+	clt_sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+	if (clt_sock < 0)
+		return clt_sock;
+
 
 	/* Connect */
 	connect(clt_sock, res->ai_addr, res->ai_addrlen);
 
-  return clt_sock;
+	return clt_sock;
 }
 
-int authenticate(int clt_sock){
+int authenticate(int clt_sock)
+{
 
   /* Code nécessaire à l'authentification auprès du serveur :
 
@@ -99,9 +86,9 @@ int authenticate(int clt_sock){
   return -1;
 }
 
-int instant_messaging(int clt_sock){
-  
-  while(1) {
+int instant_messaging(int clt_sock)
+{  
+  for (;;) {
     /*    fd_set rset;
     unsigned char code;
     unsigned char size;
@@ -150,12 +137,13 @@ int instant_messaging(int clt_sock){
       
     //}
     
-  } /* while (1) */
+  } /* for (;;) */
 
   return 0;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
   // char srv_name[BUFFSIZE];
   int srv_port = 4444;
 
@@ -173,11 +161,11 @@ int main(int argc, char *argv[]){
     exit(EXIT_FAILURE);
   }
 
-  if (instant_messaging(clt_sock) < 0){
+  if (instant_messaging(clt_sock) < 0) {
     close(clt_sock);
     eprintf("connexion closed\n");
     exit(EXIT_FAILURE);
-    }
+  }
 
   close(clt_sock);
   eprintf("connexion closed\n");
