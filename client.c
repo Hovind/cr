@@ -2,20 +2,21 @@
 #include <signal.h>
 
 char *srv_name = "localhost";
-int clt_sock;
+int clt_sock = -1;
 
 int DFLAG;
 
 void sig_handler(int s)
 {
-	msg_t msg;
+	//msg_t msg;
 	
 	switch (s) {
 	case SIGINT: /* Fallthrough */
-		msg.code = END_OK;
-		msg.size = 0;
+		//msg.code = END_OK;
+		//msg.size = 0;
 		
-		send(clt_sock, &msg, HEADSIZE, 0);
+		//send(clt_sock, &msg, HEADSIZE, 0);
+		send_msg(clt_sock, END_OK, 0, NULL);
 		
 		close(clt_sock);
 		exit(EXIT_SUCCESS);
@@ -32,7 +33,6 @@ void sig_handler(int s)
  */ 
 int connect_to_server(char *srv_name, int srv_port)
 {
-	int clt_sock = -1;
 	struct addrinfo hints, *res;
 	char service[6];
 	/* Code nécessaires à la création d'une socket en
@@ -70,7 +70,8 @@ int connect_to_server(char *srv_name, int srv_port)
 
 int authenticate(int clt_sock)
 {
-
+	unsigned char code;
+	char login[BUFFSIZE];
   /* Code nécessaire à l'authentification auprès du serveur :
 
      - attendre un paquet AUTH_REQ
@@ -82,14 +83,28 @@ int authenticate(int clt_sock)
      - agir en conséquence ...
 
   */
+	recv_msg(clt_sock, &code, NULL, NULL);
+	if (code != AUTH_REQ) {
+    DEBUG("AUTH_REQ not received");
+		return -1;
+	}
 
-  return -1;
+	printf("Enter login: ");
+	scanf("%s", login);
+	send_msg(clt_sock, AUTH_RESP, strlen(login) + 1, login);
+
+	recv_msg(clt_sock, &code, NULL, NULL);
+	if (code != ACCESS_OK)
+    DEBUG("ACCESS_OK not received");
+		return -1;
+
+  return 0;
 }
 
 int instant_messaging(int clt_sock)
 {  
   for (;;) {
-    /*    fd_set rset;
+    fd_set rset;
     unsigned char code;
     unsigned char size;
     char *data;
@@ -97,7 +112,7 @@ int instant_messaging(int clt_sock)
     FD_ZERO(&rset);
     FD_SET(clt_sock, &rset);
     FD_SET(STDIN_FILENO, &rset);
-    */
+    
     
     /* pour les étapes 2 à 4 se contenter de recevoir les messages
        envoyés par le serveur et les afficher à l'utilisateur
@@ -129,13 +144,15 @@ int instant_messaging(int clt_sock)
       
     // }
 
-    //  if (FD_ISSET(clt_sock, &rset)){
+    if (FD_ISSET(clt_sock, &rset)) {
       /* réception d'un message du serveur */
       /* expected: <code><datalen>[<data>] */
 
       //  <COMPLÉTER>
+			recv_msg(clt_sock, &code, &size, &data);
+			printf("%s\n", data);
       
-    //}
+    }
     
   } /* for (;;) */
 
@@ -145,6 +162,7 @@ int instant_messaging(int clt_sock)
 int main(int argc, char *argv[])
 {
   // char srv_name[BUFFSIZE];
+	int clt_sock;
   int srv_port = 4444;
 
   DFLAG = 1;
@@ -157,17 +175,17 @@ int main(int argc, char *argv[])
 
   if (authenticate(clt_sock) < 0){
     close(clt_sock);
-    eprintf("connexion closed\n");
+    eprintf("connection closed, authentication failed\n");
     exit(EXIT_FAILURE);
   }
 
   if (instant_messaging(clt_sock) < 0) {
     close(clt_sock);
-    eprintf("connexion closed\n");
+    eprintf("connection closed, instant messaging failed\n");
     exit(EXIT_FAILURE);
   }
 
   close(clt_sock);
-  eprintf("connexion closed\n");
+  eprintf("connection closed, success\n");
   exit(EXIT_SUCCESS);
 }

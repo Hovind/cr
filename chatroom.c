@@ -158,10 +158,10 @@ int get_client_port(int i)
 int broadcast_shutdown() 
 {
   int sock;
-  msg_t msg;
-  char *shutdown_msg = "Server is shutting down";
-  msg.code = END_OK;
-  msg.size = 23+1;
+  //msg_t msg;
+  char shutdown_msg[] = "Server is shutting down";
+  //msg.code = END_OK;
+  //msg.size = 23+1;
   
   if (curr_nb_clients == 0) {
 		return 2;
@@ -170,13 +170,10 @@ int broadcast_shutdown()
   for (int i = 0; i < MAX_CLIENTS; i++) {
     if ( (sock = chat_room[i].sock) != 0 ) { 
 				/* sending message head */
-				if ( send(sock, &msg, HEADSIZE, 0) == -1) 
-					{ /* on error, don't try to send body */
+				if (send_msg(sock, END_OK, sizeof(shutdown_msg), shutdown_msg) < 0) {
+						/* on error, don't try to send body */
 						continue;
 					}
-
-				/* sending message body if any */
-				send(sock, shutdown_msg, msg.size, 0);
 			}
     } // end for
   
@@ -224,8 +221,12 @@ int broadcast_text(char *login, char *data)
    return a pointer to newly allocated string containing the login
  */
 char* clt_authentication(int clt_sock){
+	unsigned char code;
+	unsigned char size;
+	char body[BUFFSIZE];
+	char *login;
   
-	for (int attemp=0; attemp < MAX_AUTH_ATTEMPS; attemp++) {
+	for (int attemp = 0; attemp < MAX_AUTH_ATTEMPS; attemp++) {
 
 		/* 
 		 authentification du client :
@@ -240,15 +241,26 @@ char* clt_authentication(int clt_sock){
 			 caractère contenant le login, sinon retourne NULL
 
 		*/
-		/* send_msg(AUTH_REQ);
-		recv_msg(AUTH_RESP);
-		if (asd) {
-			
-		} */
+		send_msg(clt_sock, AUTH_REQ, 0, NULL);
+  	DEBUG("Send AUTH_REQ");
+		recv_msg(clt_sock, &code, &size, (char **) &body);
+		if (code != AUTH_RESP) {
+  		DEBUG("Did not get AUTH_RESP");
+			return NULL;
+		}
+		
+		login = malloc(size + 1);
+		if (!login) {
+  		DEBUG("malloc() returned NULL");
+			return NULL;
+		}
+
+		strcpy(login, body);
+		send_msg(clt_sock, ACCESS_OK, 0, NULL);
 
 	} /* for */
 
-	return NULL;
+	return login;
 }
 
 int login_chatroom(int clt_sock, char *ip, int port)
@@ -352,7 +364,7 @@ void *chatroom(void *arg)
 									 discussion. La fonction deregister_client(i) permet de retirer le client i.
 
 				*/
-				send_msg(clt_sock, MESG, 4, "lol");
+				//send_msg(clt_sock, MESG, 4, "lol");
 				//int send_msg(int sock, unsigned char code, unsigned char size, char *body);
 
 			}
