@@ -9,7 +9,7 @@
 int send_msg(int sock, unsigned char code, unsigned char size, char *body) 
 {
 	int error;
-  msg_t msg = {
+	msg_t msg = {
 		.code = code,
 		.size = size,
 	};
@@ -17,18 +17,25 @@ int send_msg(int sock, unsigned char code, unsigned char size, char *body)
   /* Code nécessaire à envoyer le message correspondant au protocle
      sur la socket
   */
-
 	if ((error = send(sock, &msg, HEADSIZE, 0)) < 0) {
 		PERROR("Sending header failed");
 		return error;
 	}
 
-	if ((error = send(sock, &body, msg.size, 0)) < 0) {
+	printf("Sent: %d\n", code);
+
+	if (!body) {
+		return 0;
+	}
+
+	if ((error = send(sock, body, msg.size, 0)) < 0) {
 		PERROR("Sending body failed");
 		return error;
 	}
 
-  return 0;
+	printf("%s\n", body);
+
+	return 0;
 }
 
 /* recv_msg recv a message from the socket sock
@@ -39,17 +46,23 @@ int send_msg(int sock, unsigned char code, unsigned char size, char *body)
 */
 int recv_msg(int sock, unsigned char *code, unsigned char *size, char **body) 
 {
-  msg_t msg;
-	//ssize_t n;
+	msg_t msg;
 
 	recv(sock, &msg, HEADSIZE, 0);
 	*code = msg.code;
+	
+	printf("Recvt %d, %d\n", *code, msg.size);
 
 	if (!body || !size) {
 		return 0;
 	}
 
 	*size = msg.size;
-	recv(sock, &body, msg.size, 0);
-  return 0;
+	printf("before: %s\n", *body);
+	int n = recv(sock, *body, msg.size, 0);
+
+	printf("n: %d\n", n);
+	PERROR("recv");
+	printf("%s\n", *body);
+	return 0;
 }

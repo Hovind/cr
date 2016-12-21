@@ -85,7 +85,7 @@ int authenticate(int clt_sock)
   */
 	recv_msg(clt_sock, &code, NULL, NULL);
 	if (code != AUTH_REQ) {
-    DEBUG("AUTH_REQ not received");
+		 DEBUG("AUTH_REQ not received");
 		return -1;
 	}
 
@@ -94,63 +94,65 @@ int authenticate(int clt_sock)
 	send_msg(clt_sock, AUTH_RESP, strlen(login) + 1, login);
 
 	recv_msg(clt_sock, &code, NULL, NULL);
-	if (code != ACCESS_OK)
-    DEBUG("ACCESS_OK not received");
+	if (code != ACCESS_OK) {
+		DEBUG("ACCESS_OK not received");
 		return -1;
+	}
 
-  return 0;
+	return 0;
 }
 
 int instant_messaging(int clt_sock)
 {  
-  for (;;) {
-    fd_set rset;
-    unsigned char code;
-    unsigned char size;
-    char *data;
-
-    FD_ZERO(&rset);
-    FD_SET(clt_sock, &rset);
-    FD_SET(STDIN_FILENO, &rset);
-    
-    
-    /* pour les étapes 2 à 4 se contenter de recevoir les messages
-       envoyés par le serveur et les afficher à l'utilisateur
-    */
-
-    // if (select(clt_sock+1, &rset, NULL, NULL, NULL) < 0){
-    //   PERROR("select");
-    //   exit(EXIT_FAILURE);
-    // }
-    
-    // if (FD_ISSET(STDIN_FILENO, &rset)){
-    /* l'utilisateur a tapé un nouveau message */
-    //   DEBUG("STDIN_FILENO isset");
-    //   data = malloc(BUFFSIZE);
-    //   if (fgets(data, BUFFSIZE, stdin) == NULL){
-    	/* gérer feof et ferror */
-
-   //   <COMPLÉTER>
-    
-    // 	return 0;
-    //   }
-    //   size = strlen(data)+1;
-      
-    //   DEBUG("sending MESG %s(%d)", data, size);
-
-    //  <COMPLÉTER>
-
-    //   free(data);
-      
-    // }
+	for (;;) {
+	fd_set rset;
+	unsigned char code;
+	unsigned char size;
+	char *data;
+	
+	FD_ZERO(&rset);
+	FD_SET(clt_sock, &rset);
+	FD_SET(STDIN_FILENO, &rset);
+	
+	
+	/* pour les étapes 2 à 4 se contenter de recevoir les messages
+	envoyés par le serveur et les afficher à l'utilisateur
+	*/
+	
+	if (select(clt_sock + 1, &rset, NULL, NULL, NULL) < 0){
+		PERROR("select");
+		exit(EXIT_FAILURE);
+	}
+	
+	if (FD_ISSET(STDIN_FILENO, &rset)){
+		/* l'utilisateur a tapé un nouveau message */
+		DEBUG("STDIN_FILENO isset");
+		data = malloc(BUFFSIZE);
+		if (fgets(data, BUFFSIZE, stdin) == NULL){
+			/* gérer feof et ferror */
+		
+			//   <COMPLÉTER>
+			
+			return 0;
+		}
+		size = strlen(data)+1;
+		
+		DEBUG("sending MESG %s(%d)", data, size);
+		
+		//  <COMPLÉTER>
+		send_msg(clt_sock, MESG, size, data);
+		
+		free(data);
+	
+	}
 
     if (FD_ISSET(clt_sock, &rset)) {
       /* réception d'un message du serveur */
       /* expected: <code><datalen>[<data>] */
 
       //  <COMPLÉTER>
-			recv_msg(clt_sock, &code, &size, &data);
-			printf("%s\n", data);
+	recv_msg(clt_sock, &code, &size, &data);
+	printf("%s\n", data);
       
     }
     
