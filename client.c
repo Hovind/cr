@@ -90,7 +90,13 @@ int authenticate(int clt_sock)
 	}
 
 	printf("Enter login: ");
-	scanf("%s", login);
+	
+	if (!fgets(login, BUFFSIZE, stdin)) {
+		PERROR("fgets()");
+		return 0;
+	}
+	strtok(login, "\n");
+
 	send_msg(clt_sock, AUTH_RESP, strlen(login) + 1, login);
 
 	recv_msg(clt_sock, &code, NULL, NULL);
@@ -98,96 +104,107 @@ int authenticate(int clt_sock)
 		DEBUG("ACCESS_OK not received");
 		return -1;
 	}
-
 	return 0;
 }
 
 int instant_messaging(int clt_sock)
 {  
-	for (;;) {
 	fd_set rset;
 	unsigned char code;
 	unsigned char size;
 	char *data;
-	
-	FD_ZERO(&rset);
-	FD_SET(clt_sock, &rset);
-	FD_SET(STDIN_FILENO, &rset);
-	
-	
-	/* pour les étapes 2 à 4 se contenter de recevoir les messages
-	envoyés par le serveur et les afficher à l'utilisateur
-	*/
-	
-	if (select(clt_sock + 1, &rset, NULL, NULL, NULL) < 0){
-		PERROR("select");
-		exit(EXIT_FAILURE);
-	}
-	
-	if (FD_ISSET(STDIN_FILENO, &rset)){
-		/* l'utilisateur a tapé un nouveau message */
-		DEBUG("STDIN_FILENO isset");
-		data = malloc(BUFFSIZE);
-		if (fgets(data, BUFFSIZE, stdin) == NULL){
-			/* gérer feof et ferror */
+
+	for (;;) {
+		FD_ZERO(&rset);
+		FD_SET(clt_sock, &rset);
+		FD_SET(STDIN_FILENO, &rset);
 		
-			//   <COMPLÉTER>
-			
-			return 0;
+		
+		/* pour les étapes 2 à 4 se contenter de recevoir les messages
+		envoyés par le serveur et les afficher à l'utilisateur
+		*/
+		
+		if (select(clt_sock + 1, &rset, NULL, NULL, NULL) < 0){
+			PERROR("select");
+			exit(EXIT_FAILURE);
 		}
-		size = strlen(data)+1;
 		
-		DEBUG("sending MESG %s(%d)", data, size);
+		if (FD_ISSET(STDIN_FILENO, &rset)){
+			/* l'utilisateur a tapé un nouveau message */
+			DEBUG("STDIN_FILENO isset");
+			data = malloc(BUFFSIZE);
+			if (!data) {
+				PERROR("malloc");
+				return 0;
+			}
+
+			if (!fgets(data, BUFFSIZE, stdin)) {
+				/* gérer feof et ferror */
+			
+				//   <COMPLÉTER>
+				
+				return 0;
+			}
+			strtok(data, "\n");
+
+			size = strlen(data) + 1;
+			
+			DEBUG("sending MESG %s(%d)", data, size);
+			
+			//  <COMPLÉTER>
+			send_msg(clt_sock, MESG, size, data);
+			
+			free(data);
 		
-		//  <COMPLÉTER>
-		send_msg(clt_sock, MESG, size, data);
-		
-		free(data);
+		}
 	
-	}
-
-    if (FD_ISSET(clt_sock, &rset)) {
-      /* réception d'un message du serveur */
-      /* expected: <code><datalen>[<data>] */
-
-      //  <COMPLÉTER>
-	recv_msg(clt_sock, &code, &size, &data);
-	printf("%s\n", data);
-      
-    }
-    
-  } /* for (;;) */
-
-  return 0;
+		if (FD_ISSET(clt_sock, &rset)) {
+			/* réception d'un message du serveur */
+			/* expected: <code><datalen>[<data>] */
+			
+			DEBUG("CLT_SOCK isset");
+			data = malloc(BUFFSIZE);
+			
+			//  <COMPLÉTER>
+			recv_msg(clt_sock, &code, &size, &data);
+			printf("%s\n", data);
+			
+			free(data);
+		
+		}
+	
+	} /* for (;;) */
+	
+	return 0;
 }
 
 int main(int argc, char *argv[])
 {
-  // char srv_name[BUFFSIZE];
+	// char srv_name[BUFFSIZE];
 	int clt_sock;
-  int srv_port = 4444;
-
-  DFLAG = 1;
-
-  signal(SIGINT, sig_handler);
-  
-  clt_sock = connect_to_server(srv_name, srv_port);
-  if (clt_sock < 0)
-    exit(EXIT_FAILURE);
-
-  if (authenticate(clt_sock) < 0){
-    close(clt_sock);
-    eprintf("connection closed, authentication failed\n");
-    exit(EXIT_FAILURE);
-  }
-
-  if (instant_messaging(clt_sock) < 0) {
-    close(clt_sock);
-    eprintf("connection closed, instant messaging failed\n");
-    exit(EXIT_FAILURE);
-  }
-
-  close(clt_sock);
-  eprintf("connection closed, success\n");
-  exit(EXIT_SUCCESS);
+	int srv_port = 4444;
+	
+	DFLAG = 1;
+	
+	signal(SIGINT, sig_handler);
+	
+	clt_sock = connect_to_server(srv_name, srv_port);
+	if (clt_sock < 0)
+		exit(EXIT_FAILURE);
+	
+	if (authenticate(clt_sock) < 0){
+		close(clt_sock);
+		eprintf("connection closed, authentication failed\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	if (instant_messaging(clt_sock) < 0) {
+		close(clt_sock);
+		eprintf("connection closed, instant messaging failed\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	close(clt_sock);
+	eprintf("connection closed, success\n");
+	exit(EXIT_SUCCESS);
 }

@@ -22,18 +22,13 @@ int send_msg(int sock, unsigned char code, unsigned char size, char *body)
 		return error;
 	}
 
-	printf("Sent: %d\n", code);
-
 	if (!body) {
 		return 0;
-	}
 
-	if ((error = send(sock, body, msg.size, 0)) < 0) {
+	} else if ((error = send(sock, body, msg.size, 0)) < 0) {
 		PERROR("Sending body failed");
 		return error;
 	}
-
-	printf("%s\n", body);
 
 	return 0;
 }
@@ -51,18 +46,12 @@ int recv_msg(int sock, unsigned char *code, unsigned char *size, char **body)
 	recv(sock, &msg, HEADSIZE, 0);
 	*code = msg.code;
 	
-	printf("Recvt %d, %d\n", *code, msg.size);
-
 	if (!body || !size) {
 		return 0;
 	}
 
 	*size = msg.size;
-	printf("before: %s\n", *body);
-	int n = recv(sock, *body, msg.size, 0);
+	recv(sock, *body, *size, 0);
 
-	printf("n: %d\n", n);
-	PERROR("recv");
-	printf("%s\n", *body);
 	return 0;
 }

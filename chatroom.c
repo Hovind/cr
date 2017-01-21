@@ -7,12 +7,11 @@
 
 #define MAX_AUTH_ATTEMPS 3
 
-typedef struct 
-{
-  int sock;
-  char login[BUFFSIZE];
-  char ip[IP_LENGTH];
-  int port;
+typedef struct {
+	int sock;
+	char login[BUFFSIZE];
+	char ip[IP_LENGTH];
+	int port;
 } buddy_t;
   
 pthread_t chatroom_id;
@@ -23,29 +22,28 @@ int curr_nb_clients = 0;
    client is registered in the chat room */
 void new_client(int s) 
 {
-  switch (s)
-    {
-    case SIGUSR1: // new client signaled
-      break;
-    default:
-      break;
-    }
+	switch (s) {
+	case SIGUSR1: // new client signaled
+		break;
+	default:
+		break;
+	}
 }
 
 void *chatroom(void *arg);
 
 void initialize_chat_room()
 {
-  DEBUG("Initializing chat room");
-  bzero(chat_room, sizeof(chat_room));
-
-  /* using SIGUSR1 to signal new client
-     (will interrupt select call in chatroom() )
-   */
-  signal(SIGUSR1, new_client);
-
-  /* Create the chat room */
-  pthread_create(&chatroom_id, NULL, &chatroom, NULL);
+	DEBUG("Initializing chat room");
+	bzero(chat_room, sizeof(chat_room));
+	
+	/* using SIGUSR1 to signal new client
+	(will interrupt select call in chatroom() )
+	*/
+	signal(SIGUSR1, new_client);
+	
+	/* Create the chat room */
+	pthread_create(&chatroom_id, NULL, &chatroom, NULL);
 }
 
 int broadcast_shutdown();
@@ -53,44 +51,44 @@ int broadcast_shutdown();
 /* stop_chat_room() should be a safe function */
 void stop_chat_room()
 {
-  /* Create the chat room */
-  pthread_cancel(chatroom_id);
-  broadcast_shutdown();
-  
-  pthread_join(chatroom_id, NULL);
+	/* Create the chat room */
+	pthread_cancel(chatroom_id);
+	broadcast_shutdown();
+	
+	pthread_join(chatroom_id, NULL);
 }
 
 int register_new_client(int sock, char *login, char *ip, int port) 
 {
-  int i = 0;
-
-  DEBUG("registering client %s(%s:%d)", login, ip, port);
-
-  /* find the first empty cell in chat_room */
-  while (chat_room[i].sock != 0 && i < MAX_CLIENTS ) i++;
-  
-  if (i >= MAX_CLIENTS ) 
-    { /* already too many clients */
-      DEBUG("registration failed: already too many client");
-      send_msg(sock, BUSY, 0, NULL);
-
-      return -1;
-    }
-
-  chat_room[i].sock = sock;
-  strncpy(chat_room[i].login, login, BUFFSIZE);
-  strncpy(chat_room[i].ip, ip, IP_LENGTH);
-  chat_room[i].port = port;
-
-  curr_nb_clients++;
-  
-  DEBUG("client %s(%s:%d) registered", chat_room[i].login, chat_room[i].ip, chat_room[i].port);
-  DEBUG("total number of registered clients: %d",curr_nb_clients );
-  
-  /* signal the new client in the chatroom */
-  pthread_kill(chatroom_id, SIGUSR1);
-    
-  return curr_nb_clients;
+	int i = 0;
+	
+	DEBUG("registering client %s(%s:%d)", login, ip, port);
+	
+	/* find the first empty cell in chat_room */
+	while (chat_room[i].sock != 0 && i < MAX_CLIENTS ) i++;
+	
+	if (i >= MAX_CLIENTS ) {
+		/* already too many clients */
+		DEBUG("registration failed: already too many client");
+		send_msg(sock, BUSY, 0, NULL);
+		
+		return -1;
+	}
+	
+	chat_room[i].sock = sock;
+	strncpy(chat_room[i].login, login, BUFFSIZE);
+	strncpy(chat_room[i].ip, ip, IP_LENGTH);
+	chat_room[i].port = port;
+	
+	curr_nb_clients++;
+	
+	DEBUG("client %s(%s:%d) registered", chat_room[i].login, chat_room[i].ip, chat_room[i].port);
+	DEBUG("total number of registered clients: %d",curr_nb_clients );
+	
+	/* signal the new client in the chatroom */
+	pthread_kill(chatroom_id, SIGUSR1);
+	
+	return curr_nb_clients;
 }
 
 int deregister_client(int sock) 
@@ -225,16 +223,7 @@ int broadcast_text(char *login, char *data)
 char* clt_authentication(int clt_sock){
 	unsigned char code;
 	unsigned char size;
-	char data[BUFFSIZE];
-	char *login = data;
-	data[0] = 'd';
-	data[1] = 'e';
-	data[2] = 'f';
-	data[3] = 'a';
-	data[4] = 'u';
-	data[5] = 'l';
-	data[6] = 't';
-	data[7] = '\0';
+	char *login;
   
 	for (int attemp = 0; attemp < MAX_AUTH_ATTEMPS; attemp++) {
 
@@ -255,21 +244,18 @@ char* clt_authentication(int clt_sock){
 		send_msg(clt_sock, AUTH_REQ, 0, NULL);
 		DEBUG("Send AUTH_REQ");
 
-		printf("chatroom before: %s\n", data);
+		login = malloc(BUFFSIZE);
+		if (!login) {
+			DEBUG("malloc() returned NULL");
+			return NULL;
+		}
+
 		recv_msg(clt_sock, &code, &size, &login);
 		if (code != AUTH_RESP) {
 			DEBUG("Did not get AUTH_RESP");
 			return NULL;
 		}
 		
-		login = malloc(size);
-		if (!login) {
-			DEBUG("malloc() returned NULL");
-			return NULL;
-		}
-		
-		strcpy(login, data);
-
 		send_msg(clt_sock, ACCESS_OK, 0, NULL);
 		return login;
 
@@ -297,8 +283,7 @@ int login_chatroom(int clt_sock, char *ip, int port)
 	
 	/* authenticate the connected client */
 	login = clt_authentication(clt_sock);
-	
-	if (login == NULL) {
+	if (!login) {
 		DEBUG("authentication failed for %s:%d", ip, port);      
 		return -1;
 	}
@@ -381,6 +366,12 @@ void *chatroom(void *arg)
 									 discussion. La fonction deregister_client(i) permet de retirer le client i.
 
 				*/
+				data = malloc(BUFFSIZE);
+				if (!data) {
+					PERROR("malloc");
+					return NULL;
+				}
+
 				recv_msg(clt_sock, &code, &size, &data);
 				if (code == MESG) {
 					broadcast_text(get_client_login(i), data);	
