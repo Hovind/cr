@@ -12,10 +12,6 @@ void sig_handler(int s)
 	
 	switch (s) {
 	case SIGINT: /* Fallthrough */
-		//msg.code = END_OK;
-		//msg.size = 0;
-		
-		//send(clt_sock, &msg, HEADSIZE, 0);
 		send_msg(clt_sock, END_OK, 0, NULL);
 		
 		close(clt_sock);
@@ -167,9 +163,12 @@ int instant_messaging(int clt_sock)
 			
 			//  <COMPLÉTER>
 			recv_msg(clt_sock, &code, &size, &data);
-			printf("%s\n", data);
 			
+			printf("%s\n", data);
 			free(data);
+			if (code == END_OK) {
+				return 0;
+			}
 		
 		}
 	

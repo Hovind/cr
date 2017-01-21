@@ -62,27 +62,27 @@ int create_a_listening_socket(int srv_port, int maxconn){
 }
 
 int accept_clt_conn(int srv_sock, struct sockaddr_in *clt_sockaddr){
-  int clt_sock =-1;
-
-  /* Code nécessaire à l'acception d'une connexion sur
-     la socket en écoute (passée en argument via le paramètre srv_sock :
-     
-     - appel à accept()
-     
-     avec les bons paramètres et contrôles d'erreurs.
-     
-     La fonction retourne l'identifiant de la socket cliente ou -1 en
-     cas d'erreur.
-     
-  */
+	int clt_sock =-1;
+	
+	/* Code nécessaire à l'acception d'une connexion sur
+	la socket en écoute (passée en argument via le paramètre srv_sock :
+	
+	- appel à accept()
+	
+	avec les bons paramètres et contrôles d'erreurs.
+	
+	La fonction retourne l'identifiant de la socket cliente ou -1 en
+	cas d'erreur.
+	
+	*/
 	//clt_sock = accept(srv_sock, clt_sockaddr, sizeof(*clt_sockaddr));
 	clt_sock = accept(srv_sock, NULL, NULL);
 	if (clt_sock < 0)
 		return clt_sock;
-
-  DEBUG("connexion accepted");
-
-  return clt_sock;
+	
+	DEBUG("connexion accepted");
+	
+	return clt_sock;
 }
 
 int main(void) 
