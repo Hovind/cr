@@ -336,51 +336,51 @@ void *chatroom(void *arg)
 		}
       
 		if (select(nfds+1, &rset, NULL, NULL, NULL) <= 0) {	
-				if ( errno == EINTR ) {
-					DEBUG("select interrupted");
+				if (errno == EINTR) {
+					DEBUG("select() interrupted");
 					continue;
 				}
-				PERROR("select");
+				PERROR("select()");
 				return NULL;
 		}
       	 
 		/* find which client sent data */
 		for (int i = 0; i < MAX_CLIENTS; i++) {
-				clt_sock = get_client_socket(i);
-				if (clt_sock == 0) continue;
-				
-				if (!FD_ISSET(clt_sock, &rset)){
-					continue;
-				}
-					
-				/* read client i message */
-				/* 
-					 - lecture du message émit par le client i
-
-					 - si code MESG: envoie du message à tous les clients avec la fonction broadcast_text()
-					 la fonction get_client_login(i) permet de récupérer le login du client i.
-
-					 - sinon traité le message de façon approprié: un client
-									 qui se déconnecte (END_OK) ou qui renvoi une erreur ou
-									 provoque un erreur doit être retiré du salon de
-									 discussion. La fonction deregister_client(i) permet de retirer le client i.
-
-				*/
-				data = malloc(BUFFSIZE);
-				if (!data) {
-					PERROR("malloc");
-					return NULL;
-				}
-
-				recv_msg(clt_sock, &code, &size, &data);
-				if (code == MESG) {
-					broadcast_text(get_client_login(i), data);	
-				}
-				//int send_msg(int sock, unsigned char code, unsigned char size, char *body);
-
+			clt_sock = get_client_socket(i);
+			if (clt_sock == 0) continue;
+			
+			if (!FD_ISSET(clt_sock, &rset)){
+				continue;
 			}
-      
-    } /* for (;;) */
+				
+			/* read client i message */
+			/* 
+			- lecture du message émit par le client i
+			
+			- si code MESG: envoie du message à tous les clients avec la fonction broadcast_text()
+			la fonction get_client_login(i) permet de récupérer le login du client i.
+			
+			- sinon traité le message de façon approprié: un client
+						 qui se déconnecte (END_OK) ou qui renvoi une erreur ou
+						 provoque un erreur doit être retiré du salon de
+						 discussion. La fonction deregister_client(i) permet de retirer le client i.
 
-  return NULL;
+			*/
+			data = malloc(BUFFSIZE);
+			if (!data) {
+				PERROR("malloc()");
+				return NULL;
+			}
+
+			recv_msg(clt_sock, &code, &size, &data);
+			if (code == MESG) {
+				broadcast_text(get_client_login(i), data);	
+			} else {
+				deregister_client(clt_sock);
+			}
+		}
+      
+	} /* for (;;) */
+
+	return NULL;
 }

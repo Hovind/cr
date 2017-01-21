@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
 	int clt_sock;
 	int srv_port = 4444;
 	
-	DFLAG = 1;
+	DFLAG = 0;
 	
 	signal(SIGINT, sig_handler);
 	
