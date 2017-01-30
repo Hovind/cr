@@ -8,12 +8,9 @@ int DFLAG;
 
 void sig_handler(int s)
 {
-	//msg_t msg;
-	
 	switch (s) {
 	case SIGINT: /* Fallthrough */
 		send_msg(clt_sock, END_OK, 0, NULL);
-		
 		close(clt_sock);
 		exit(EXIT_SUCCESS);
 	default:
@@ -31,23 +28,22 @@ int connect_to_server(char *srv_name, int srv_port)
 {
 	struct addrinfo hints, *res;
 	char service[6];
-	/* Code nécessaires à la création d'une socket en
-	   écoute : 
+	/* Code nécessaires à la création d'une socket en écoute : 
 	     
-	   - résolution du nom avec gethostbyname
-	     
-	   - appel à socket() 
-	     
-	   - appel à connect()
-	   
-	   avec les bons paramètres et contrôles d'erreurs.
+	- résolution du nom avec gethostbyname
 
-	   La fonction retourne l'identifiant de la socket cliente ou -1 en cas d'erreur
+	- appel à socket() 
+
+	- appel à connect()
+
+	avec les bons paramètres et contrôles d'erreurs.
+
+	La fonction retourne l'identifiant de la socket cliente ou -1 en cas d'erreur
 	*/
 
 	/* Get address info (host) */
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;  // use IPv4 or IPv6, whichever
+	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 	sprintf(service, "%d", srv_port);
 	getaddrinfo(srv_name, service, &hints, &res);
@@ -69,18 +65,21 @@ int authenticate(int clt_sock)
 	char login[BUFFSIZE];
 	/* Code nécessaire à l'authentification auprès du serveur :
 
-	     - attendre un paquet AUTH_REQ
+	- attendre un paquet AUTH_REQ
 
-	     - répondre avec un paquet AUTH_RESP
-	     
-	     - attendre un paquet ACCESS_OK / ACCESS_DENIED / AUTH_REQ
+	- répondre avec un paquet AUTH_RESP
 
-	     - agir en conséquence ...
+	- attendre un paquet ACCESS_OK / ACCESS_DENIED / AUTH_REQ
+
+	- agir en conséquence ...
 
 	*/
 	recv_msg(clt_sock, &code, NULL, NULL);
-	if (code != AUTH_REQ) {
-		 DEBUG("AUTH_REQ not received");
+	if (code == BUSY) {
+		printf("Server busy, too many clients\n");
+		return -1;
+	} else if (code != AUTH_REQ) {
+		DEBUG("AUTH_REQ not received");
 		return -1;
 	}
 
@@ -90,6 +89,7 @@ int authenticate(int clt_sock)
 		PERROR("fgets()");
 		return 0;
 	}
+	/* Strip trailing newline */
 	strtok(login, "\n");
 
 	send_msg(clt_sock, AUTH_RESP, strlen(login) + 1, login);
@@ -120,7 +120,7 @@ int instant_messaging(int clt_sock)
 		*/
 		
 		if (select(clt_sock + 1, &rset, NULL, NULL, NULL) < 0){
-			PERROR("select");
+			PERROR("select()");
 			exit(EXIT_FAILURE);
 		}
 		
@@ -129,15 +129,18 @@ int instant_messaging(int clt_sock)
 			DEBUG("STDIN_FILENO isset");
 			data = malloc(BUFFSIZE);
 			if (!data) {
-				PERROR("malloc");
+				PERROR("malloc()");
 				return 0;
 			}
 
 			if (!fgets(data, BUFFSIZE, stdin)) {
 				/* gérer feof et ferror */
 				//   <COMPLÉTER>
+				free(data);
+				PERROR("fgets()");
 				return 0;
 			}
+			/* Strip trailing newline */
 			strtok(data, "\n");
 
 			size = strlen(data) + 1;
@@ -180,7 +183,7 @@ int main(int argc, char *argv[])
 	int clt_sock;
 	int srv_port = 4444;
 	
-	DFLAG = 0;
+	DFLAG = 1;
 	
 	signal(SIGINT, sig_handler);
 	

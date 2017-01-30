@@ -29,22 +29,24 @@ int create_a_listening_socket(int srv_port, int maxconn){
 	const struct sockaddr_in srv_sockaddr = {
 		.sin_family = AF_INET,
 		.sin_port = htons(srv_port),
-		.sin_addr = htonl(INADDR_ANY),
+		.sin_addr = {
+		  .s_addr = htonl(INADDR_ANY),
+	  },
 	};
-  /* Code nécessaires à la création d'une socket en
-     écoute : 
+	/* Code nécessaires à la création d'une socket en
+	écoute : 
 
-     - appel à socket() 
+	- appel à socket() 
 
-     - appel à bind()
+	- appel à bind()
 
-     - appel à listen()
+	- appel à listen()
 
-     avec les bons paramètres et contrôles d'erreurs.
+	avec les bons paramètres et contrôles d'erreurs.
 
-     La fonction retourne l'identifiant de la socket serveur ou -1 en
-     cas d'erreur.
-  */
+	La fonction retourne l'identifiant de la socket serveur ou -1 en
+	cas d'erreur.
+	*/
 	
 	srv_sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (srv_sock < 0)

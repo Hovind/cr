@@ -70,7 +70,6 @@ int register_new_client(int sock, char *login, char *ip, int port)
 	if (i >= MAX_CLIENTS ) {
 		/* already too many clients */
 		DEBUG("registration failed: already too many client");
-		send_msg(sock, BUSY, 0, NULL);
 		
 		return -1;
 	}
@@ -186,11 +185,11 @@ int broadcast_msg(int code, int size, char *data)
 		return 2;
 	}
 	
-	for (int i = 0; i < MAX_CLIENTS; i++) {
+	for (int i = 0; i < MAX_CLIENTS; ++i) {
 		if ((clt_sock = chat_room[i].sock) != 0) { 
 			send_msg(clt_sock, MESG, size, data);
 		}
-	} // end for
+	}
 	
 	return 0;  
 }
@@ -219,25 +218,25 @@ int broadcast_text(char *login, char *data)
 /* clt_authentication authenticate a new buddy and return her login
    clt_sock: client socket
    return a pointer to newly allocated string containing the login
- */
+*/
 char* clt_authentication(int clt_sock){
 	unsigned char code;
 	unsigned char size;
 	char *login;
-  
+
 	for (int attemp = 0; attemp < MAX_AUTH_ATTEMPS; attemp++) {
 
 		/* 
-		 authentification du client :
+		authentification du client :
 
-		 - envoi du AUTH_REQ
+		- envoi du AUTH_REQ
 
-		 - lecture du AUTH_RESP
-		 
-		 - envoi du ACCESS_OK / ACCESS_DENIED ou nouveau tour de boucle
+		- lecture du AUTH_RESP
 
-		 - en cas de succès retourne un pointeur vers la chaîne de
-			 caractère contenant le login, sinon retourne NULL
+		- envoi du ACCESS_OK / ACCESS_DENIED ou nouveau tour de boucle
+
+		- en cas de succès retourne un pointeur vers la chaîne de
+		 caractère contenant le login, sinon retourne NULL
 
 		*/
 
@@ -255,12 +254,12 @@ char* clt_authentication(int clt_sock){
 			DEBUG("Did not get AUTH_RESP");
 			return NULL;
 		}
-		
+
 		send_msg(clt_sock, ACCESS_OK, 0, NULL);
 		return login;
 
 	} /* for */
-	
+
 	return NULL;
 }
 
@@ -277,7 +276,7 @@ int login_chatroom(int clt_sock, char *ip, int port)
 			PERROR("Sending BUSY failed");
 			return -1;
 		}
-	
+
 		return -1;
 	}
 	
@@ -317,8 +316,6 @@ void *chatroom(void *arg)
 		char *data;
 		
 		FD_ZERO(&rset);
-		//FD_SET(p[0], &rset);
-		//nfds = p[0];
 
 		/* adding clients' sockets to rset */
 		for (int i = 0; i < MAX_CLIENTS; i++) {
@@ -334,8 +331,8 @@ void *chatroom(void *arg)
 				nfds = clt_sock > nfds ? clt_sock: nfds;
 			}
 		}
-      
-		if (select(nfds+1, &rset, NULL, NULL, NULL) <= 0) {	
+
+		if (select(nfds+1, &rset, NULL, NULL, NULL) <= 0) {
 			if (errno == EINTR) {
 				DEBUG("select() interrupted");
 				continue;
@@ -343,15 +340,14 @@ void *chatroom(void *arg)
 			PERROR("select()");
 			return NULL;
 		}
-      	 
+ 
 		/* find which client sent data */
 		for (int i = 0; i < MAX_CLIENTS; i++) {
 			clt_sock = get_client_socket(i);
 			if (clt_sock == 0) continue;
-			
-			if (!FD_ISSET(clt_sock, &rset))	continue;
 
-				
+			if (!FD_ISSET(clt_sock, &rset)) continue;
+
 			/* read client i message */
 			/* 
 			- lecture du message émit par le client i
