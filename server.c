@@ -115,7 +115,7 @@ int main(void)
 			perror("accept_clt_conn");	
 			exit(EXIT_FAILURE);
 		}
-		
+
 		clt_ip = inet_ntoa(clt_sockaddr.sin_addr);
 		clt_port = ntohs(clt_sockaddr.sin_port);
 		
