@@ -14,18 +14,20 @@ int send_msg(int sock, unsigned char code, unsigned char size, char *body)
 		.size = size,
 	};
 
-  /* Code nécessaire à envoyer le message correspondant au protocle
-     sur la socket
-  */
-	if ((error = send(sock, &msg, HEADSIZE, 0)) < 0) {
+	/* Code nécessaire à envoyer le message correspondant au protocle
+	     sur la socket
+	*/
+	error = send(sock, &msg, HEADSIZE, 0);
+	if (error < 0) {
 		PERROR("Sending header failed");
 		return error;
 	}
 
-	if (!body) {
+	if (!body)
 		return 0;
 
-	} else if ((error = send(sock, body, msg.size, 0)) < 0) {
+	error = send(sock, body, msg.size, 0);
+	if (error < 0) {
 		PERROR("Sending body failed");
 		return error;
 	}

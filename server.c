@@ -82,7 +82,7 @@ int accept_clt_conn(int srv_sock, struct sockaddr_in *clt_sockaddr){
 	if (clt_sock < 0)
 		return clt_sock;
 	
-	DEBUG("connexion accepted");
+	DEBUG("connection accepted");
 	
 	return clt_sock;
 }

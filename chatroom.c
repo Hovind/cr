@@ -373,7 +373,7 @@ void *chatroom(void *arg)
 
 			recv_msg(clt_sock, &code, &size, &data);
 			if (code == MESG) {
-				broadcast_text(get_client_login(i), data);	
+				broadcast_text(get_client_login(i), data);
 			} else {
 				deregister_client(clt_sock);
 			}

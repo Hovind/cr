@@ -45,7 +45,7 @@ int connect_to_server(char *srv_name, int srv_port)
 	   La fonction retourne l'identifiant de la socket cliente ou -1 en cas d'erreur
 	*/
 
-	/* Get address info */
+	/* Get address info (host) */
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;  // use IPv4 or IPv6, whichever
 	hints.ai_socktype = SOCK_STREAM;
@@ -57,7 +57,6 @@ int connect_to_server(char *srv_name, int srv_port)
 	if (clt_sock < 0)
 		return clt_sock;
 
-
 	/* Connect */
 	connect(clt_sock, res->ai_addr, res->ai_addrlen);
 
@@ -68,17 +67,17 @@ int authenticate(int clt_sock)
 {
 	unsigned char code;
 	char login[BUFFSIZE];
-  /* Code nécessaire à l'authentification auprès du serveur :
+	/* Code nécessaire à l'authentification auprès du serveur :
 
-     - attendre un paquet AUTH_REQ
+	     - attendre un paquet AUTH_REQ
 
-     - répondre avec un paquet AUTH_RESP
-     
-     - attendre un paquet ACCESS_OK / ACCESS_DENIED / AUTH_REQ
+	     - répondre avec un paquet AUTH_RESP
+	     
+	     - attendre un paquet ACCESS_OK / ACCESS_DENIED / AUTH_REQ
 
-     - agir en conséquence ...
+	     - agir en conséquence ...
 
-  */
+	*/
 	recv_msg(clt_sock, &code, NULL, NULL);
 	if (code != AUTH_REQ) {
 		 DEBUG("AUTH_REQ not received");
@@ -136,9 +135,7 @@ int instant_messaging(int clt_sock)
 
 			if (!fgets(data, BUFFSIZE, stdin)) {
 				/* gérer feof et ferror */
-			
 				//   <COMPLÉTER>
-				
 				return 0;
 			}
 			strtok(data, "\n");
