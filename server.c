@@ -62,7 +62,8 @@ int create_a_listening_socket(int srv_port, int maxconn){
 }
 
 int accept_clt_conn(int srv_sock, struct sockaddr_in *clt_sockaddr){
-	int clt_sock =-1;
+	int clt_sock = -1;
+	socklen_t addr_size;
 	
 	/* Code nécessaire à l'acception d'une connexion sur
 	la socket en écoute (passée en argument via le paramètre srv_sock :
@@ -75,8 +76,9 @@ int accept_clt_conn(int srv_sock, struct sockaddr_in *clt_sockaddr){
 	cas d'erreur.
 	
 	*/
-	//clt_sock = accept(srv_sock, clt_sockaddr, sizeof(*clt_sockaddr));
-	clt_sock = accept(srv_sock, NULL, NULL);
+
+	clt_sock = accept(srv_sock, (struct sockaddr *) &clt_sockaddr, &addr_size);
+
 	if (clt_sock < 0)
 		return clt_sock;
 	

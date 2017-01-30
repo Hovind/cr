@@ -111,42 +111,42 @@ int deregister_client(int sock)
 
 int get_client_socket(int i) 
 {
-  if (i >= MAX_CLIENTS || i < 0 ) {
+	if (i >= MAX_CLIENTS || i < 0 ) {
 		DEBUG("get client socket failed: wrong value %d", i);
 		return -1;
 	}
   
-  return chat_room[i].sock;
+	return chat_room[i].sock;
 }
 
 char *get_client_login(int i) 
 {
-  if (i >= MAX_CLIENTS || i < 0 ) {
+	if (i >= MAX_CLIENTS || i < 0 ) {
 		DEBUG("get client IP failed: wrong value %d", i);
 		return NULL;
 	}
   
-  return chat_room[i].login;
+	return chat_room[i].login;
 }
 
 char *get_client_ip(int i) 
 {
-  if (i >= MAX_CLIENTS || i < 0 ) {
+	if (i >= MAX_CLIENTS || i < 0 ) {
 		DEBUG("get client IP failed: wrong value %d", i);
 		return NULL;
 	}
   
-  return chat_room[i].ip;
+	return chat_room[i].ip;
 }
 
 int get_client_port(int i) 
 {
-  if (i >= MAX_CLIENTS || i < 0 ) {
+	if (i >= MAX_CLIENTS || i < 0 ) {
 		DEBUG("get client port failed: wrong value %d", i);
 		return -1;
 	}
   
-  return chat_room[i].port;
+	return chat_room[i].port;
 }
 
 /* broadcast_shutdown send a END_OK message to all chat room clients
@@ -202,7 +202,7 @@ int broadcast_text(char *login, char *data)
 	int size;
 	int retval;
 	
-	size = strlen(login)+strlen(tell)+strlen(data)+1;
+	size = strlen(login) + strlen(tell) + strlen(data) + 1;
 	text = malloc(size);
 	bzero(text, size);
 	
@@ -260,14 +260,14 @@ char* clt_authentication(int clt_sock){
 		return login;
 
 	} /* for */
-
+	
 	return NULL;
 }
 
 int login_chatroom(int clt_sock, char *ip, int port)
 {
 	char *login;
-	//char *hello = "bonjour!";
+	char *hello = "Bonjour!";
 	
 	if (curr_nb_clients == MAX_CLIENTS) {
 		DEBUG("Already too many clients");
@@ -298,7 +298,7 @@ int login_chatroom(int clt_sock, char *ip, int port)
 	}
 	
 	/* client registered */
-	//broadcast_text(login, hello);
+	send_msg(clt_sock, MESG, strlen(hello) + 1, hello);
 	DEBUG("client %s(%s:%d) logged in", login, ip, port);
 	free(login);
 	
@@ -336,12 +336,12 @@ void *chatroom(void *arg)
 		}
       
 		if (select(nfds+1, &rset, NULL, NULL, NULL) <= 0) {	
-				if (errno == EINTR) {
-					DEBUG("select() interrupted");
-					continue;
-				}
-				PERROR("select()");
-				return NULL;
+			if (errno == EINTR) {
+				DEBUG("select() interrupted");
+				continue;
+			}
+			PERROR("select()");
+			return NULL;
 		}
       	 
 		/* find which client sent data */
@@ -349,9 +349,8 @@ void *chatroom(void *arg)
 			clt_sock = get_client_socket(i);
 			if (clt_sock == 0) continue;
 			
-			if (!FD_ISSET(clt_sock, &rset)){
-				continue;
-			}
+			if (!FD_ISSET(clt_sock, &rset))	continue;
+
 				
 			/* read client i message */
 			/* 
@@ -378,6 +377,7 @@ void *chatroom(void *arg)
 			} else {
 				deregister_client(clt_sock);
 			}
+			free(data);
 		}
       
 	} /* for (;;) */
